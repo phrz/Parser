@@ -6,20 +6,41 @@
 //  Copyright © 2016 Paul Herz. All rights reserved.
 //
 
-import Foundation
+// stringValue ::= '"' ~'"' '"'
+let stringValue = literal("\"") + not("\"") + literal("\"")
 
-// typealias Parser<T> = (String) -> (output: [T], remainder: String)?
+// expression ::= <stringValue>
+let expression = stringValue
 
-let s = "aabc"
-let p = and( string("aa"), any(), character("c"))
-if let (output, remainder) = p(s) {
-	print("Success")
-	print("Output: \(output)")
-	print("Remainder: '\(remainder)'")
+// identifier ::= [A-Za-z_]{ [A-Za-z0-9_] }
+let identifier = (alphabetical() | character("_")) + anyNumber(of: alphanumeric() | character("_"))
+
+// builtInIdentifier ::= 'print'
+let builtInIdentifier = literal("print")
+
+// parameterList ::= <expression> { ',' <expression> }
+let parameterList = expression + anyNumber(of: literal(",") + expression)
+
+// builtIn ::= <builtInIdentifier> '(' <parameterList> ')'
+let builtIn = builtInIdentifier + literal("(") + parameterList + literal(")")
+
+// assignmentStatement ::= <identifier> '=' <expression>
+let assignmentStatement = identifier + expression
+
+let statement = (assignmentStatement | builtIn) + literal(";")
+
+// program ::= statement { statement }
+let program = anyNumber(of: statement)
+
+
+
+let code = "print(\"Hello, world!\");"
+let (output, remainder) = program.parse(code)!
+
+if remainder.isEmpty {
+    print("Success:")
+    print(output)
 } else {
-	print("Failure")
+    print("Program only partially consumed.")
+    print(remainder)
 }
-
-
-
-
